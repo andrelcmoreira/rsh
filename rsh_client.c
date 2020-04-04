@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     }
 
     /* Define 5 seconds as timeout for communication with server. */
-    op_timeout.tv_sec = 1;
+    op_timeout.tv_sec = 5;
     op_timeout.tv_usec = 0;
 
     /* Set the timeout for read operations. */
