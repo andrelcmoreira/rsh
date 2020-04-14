@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -64,9 +63,8 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    /* Define 5 seconds as timeout for communication with server. */
-    op_timeout.tv_sec = 5;
-    op_timeout.tv_usec = 0;
+    op_timeout.tv_sec = 0;
+    op_timeout.tv_usec = 300000;
 
     /* Set the timeout for read operations. */
     setsockopt(server_fd, SOL_SOCKET, SO_RCVTIMEO, &op_timeout, sizeof(struct timeval));
@@ -77,28 +75,25 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    while (1) {
-        fprintf(stdout, "rsh$ ");
+    /* Read the prompt */
+    read(server_fd, server_buffer, (2 * sizeof(char)));
+    fprintf(stdout, "%s", server_buffer);
 
+    while (1) {
         memset(client_buffer, 0, sizeof(client_buffer));
-        memset(server_buffer, 0, sizeof(server_buffer));
 
         fgets(client_buffer, sizeof(client_buffer), stdin);
 
-        /* Remove the '\n' char. */
-        client_buffer[strlen(client_buffer)] = 0;
-        client_buffer[strlen(client_buffer) - 1] = '\0';
-
         /* Issue the command */
         write(server_fd, client_buffer, strlen(client_buffer));
-
-        if (!strcmp(client_buffer, "exit"))
+        if (!strcmp(client_buffer, "exit\n"))
             break;
 
-        /* Read the reply */
-        while (read(server_fd, server_buffer, sizeof(server_buffer)) == sizeof(server_buffer))
-            /* Show the command result */
+        /* Read the result */
+        while (read(server_fd, server_buffer, sizeof(server_buffer)) > 0) {
             fprintf(stdout, "%s", server_buffer);
+            memset(server_buffer, 0, sizeof(server_buffer));
+        }
     }
 
     close(server_fd);
