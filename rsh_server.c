@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (server_fd == -1) {
         fprintf(stderr, "[-] fail to create the server socket.\n");
         exit(EXIT_FAILURE);
