@@ -70,8 +70,7 @@ int main(int argc, char *argv[])
 
     addr.sin_family = AF_INET;
 
-    fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (fd == -1) {
+    if ((fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
         fprintf(stderr, "[-] fail to create the communication socket!\n");
         exit(EXIT_FAILURE);
     }

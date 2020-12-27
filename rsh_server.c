@@ -41,33 +41,34 @@ static int parse_args(int argc, char *argv[], in_port_t *server_port)
     return 0;
 }
 
+static void read_cli_buffer(int client_fd)
+{
+    char cli_buffer;
+
+    while (read(client_fd, &cli_buffer, sizeof(cli_buffer)) > 0) {
+        fprintf(stdout, "%c", cli_buffer);
+        cli_buffer = '\0';
+    }
+}
+
 static void handle_client(int client_fd)
 {
-    char buffer[1024];
-
-    memset(buffer, 0, sizeof(buffer));
+    char kb_buffer[1024];
 
     /* Read the prompt */
-    read(client_fd, buffer, (2 * sizeof(char)));
-    fprintf(stdout, "%s", buffer);
+    read_cli_buffer(client_fd);
 
     while (1) {
-        memset(buffer, 0, sizeof(buffer));
-
-        fgets(buffer, sizeof(buffer), stdin);
+        memset(kb_buffer, 0, sizeof(kb_buffer));
+        fgets(kb_buffer, sizeof(kb_buffer), stdin);
 
         /* Issue the command */
-        write(client_fd, buffer, strlen(buffer));
-        if (!strcmp(buffer, "exit\n"))
+        write(client_fd, kb_buffer, strlen(kb_buffer));
+        if (!strcmp(kb_buffer, "exit\n"))
             break;
 
-        memset(buffer, 0, sizeof(buffer));
-
         /* Read the result */
-        while (read(client_fd, buffer, sizeof(buffer)) > 0) {
-            fprintf(stdout, "%s", buffer);
-            memset(buffer, 0, sizeof(buffer));
-        }
+        read_cli_buffer(client_fd);
     }
 }
 
@@ -88,8 +89,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (server_fd == -1) {
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
         fprintf(stderr, "[-] fail to create the server socket.\n");
         exit(EXIT_FAILURE);
     }
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    close(server_fd);
+    (void)close(server_fd);
 
     exit(EXIT_SUCCESS);
 }
