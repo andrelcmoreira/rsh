@@ -17,7 +17,7 @@ static void usage(char *progname)
         "|_|  |___/_| |_|  \n"
         "(r)everse(sh)ell\n";
 
-    fprintf(stdout, "%s\nusage: %s [-p server_port]\n", banner, progname);
+    fprintf(stdout, "%s\nusage: %s -p <server_port>\n", banner, progname);
 }
 
 static int parse_args(int argc, char *argv[], in_port_t *server_port)
@@ -106,11 +106,13 @@ int main(int argc, char *argv[])
     /* Bind the server to specified port */
     if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) == -1) {
         fprintf(stderr, "[-] fail to bind the server to specified port\n");
+        close(server_fd);
         exit(EXIT_FAILURE);
     }
 
     if (listen(server_fd, 1) == -1) {
         fprintf(stderr, "[-] fail to configure the server to listen new connections\n");
+        close(server_fd);
         exit(EXIT_FAILURE);
     }
 
@@ -126,7 +128,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    (void)close(server_fd);
+    close(server_fd);
 
     exit(EXIT_SUCCESS);
 }

