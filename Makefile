@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Werror -O0
+CFLAGS = -Wall -Werror -O3
 
 all: client server
 
