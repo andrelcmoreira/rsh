@@ -78,7 +78,7 @@ static int run(struct sockaddr_in *addr) {
 
   exec_shell(fd);
 
-  return EXIT_SUCCESS;
+  return EXIT_SUCCESS;  // normally never reached
 }
 
 int main(int argc, char *argv[]) {
