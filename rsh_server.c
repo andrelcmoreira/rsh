@@ -10,15 +10,7 @@
 #include "common.h"
 
 static void usage(const char *progname) {
-  const char *banner =
-    "          _       \n"
-    " _ __ ___| |__    \n"
-    "| '__/ __| '_ \\  \n"
-    "| |  \\__ \\ | | |\n"
-    "|_|  |___/_| |_|  \n"
-    "(r)everse(sh)ell\n";
-
-  rsh_log("%s\nusage: %s -p <server_port>\n", banner, progname);
+  RSH_LOG("%s\nusage: %s -p <server_port>\n", BANNER, progname);
 }
 
 static int parse_args(int argc, char *argv[], in_port_t *server_port) {
@@ -46,7 +38,7 @@ static void read_cli_buffer(int client_fd) {
   char cli_buffer;
 
   while (read(client_fd, &cli_buffer, sizeof(cli_buffer)) > 0) {
-    rsh_log("%c", cli_buffer);
+    RSH_LOG("%c", cli_buffer);
     cli_buffer = '\0';
   }
 }
@@ -79,7 +71,7 @@ static int run(struct sockaddr_in *s_addr) {
   struct timeval rd_timeout;
 
   if ((s_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-    rsh_error("fail to create the server socket.\n");
+    RSH_ERROR("fail to create the server socket!\n");
 
     return 1;
   }
@@ -96,28 +88,28 @@ static int run(struct sockaddr_in *s_addr) {
 
   // bind the server to specified port
   if (bind(s_fd, (struct sockaddr *)s_addr, sizeof(struct sockaddr)) == -1) {
-    rsh_error("fail to bind the server to specified port\n");
+    RSH_ERROR("fail to bind the server to specified port!\n");
     close(s_fd);
 
     return 1;
   }
 
   if (listen(s_fd, 1) == -1) {
-    rsh_error("fail to configure the server to listen connections\n");
+    RSH_ERROR("fail to configure the server to listen connections!\n");
     close(s_fd);
 
     return 1;
   }
 
-  rsh_info("starting server...\n");
+  RSH_INFO("starting server...\n");
 
   while (1) {
     c_fd = accept(s_fd, (struct sockaddr *)&c_addr, &cli_len);
 
     if (c_fd > 0) {
-      rsh_info("client %s connected\n", inet_ntoa(c_addr.sin_addr));
+      RSH_INFO("client %s connected\n", inet_ntoa(c_addr.sin_addr));
       handle_client(c_fd);
-      rsh_info("client %s disconnected\n", inet_ntoa(c_addr.sin_addr));
+      RSH_INFO("client %s disconnected\n", inet_ntoa(c_addr.sin_addr));
     }
   }
 
@@ -127,18 +119,18 @@ static int run(struct sockaddr_in *s_addr) {
 }
 
 int main(int argc, char *argv[]) {
-  struct sockaddr_in server_addr;
+  struct sockaddr_in addr;
   int ret;
 
-  memset(&server_addr, 0, sizeof(struct sockaddr_in));
+  memset(&addr, 0, sizeof(struct sockaddr_in));
 
   // parse the server port
-  if (parse_args(argc, argv, &server_addr.sin_port)) {
+  if (parse_args(argc, argv, &addr.sin_port)) {
     usage(argv[0]);
     exit(EXIT_FAILURE);
   }
 
-  ret = run(&server_addr);
+  ret = run(&addr);
 
   exit(!ret ? EXIT_SUCCESS : EXIT_FAILURE);
 }
