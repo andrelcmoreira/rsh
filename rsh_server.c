@@ -10,24 +10,33 @@
 #include "common.h"
 
 static void usage(const char *progname) {
-  RSH_LOG("%s\nusage: %s -p <server_port>\n", BANNER, progname);
+  const char *banner = BANNER;
+
+  RSH_LOG(
+      "%s\nusage: %s [OPTIONS]\n\n"
+      "OPTIONS\n"
+      " -p, --port <port> Specify the port to bind the server to\n"
+      " -h, --help        Show the usage\n", banner, progname);
 }
 
-static int parse_args(int argc, char *argv[], in_port_t *server_port) {
+static int parse_args(int argc, char *argv[], struct rsh_ctx_t *ctx) {
+  const char *short_opts = "p:h";
+  const struct option long_opts[] = {
+    { "port", required_argument, NULL, 'p' },
+    { "help", no_argument, NULL, 'h' }};
   int opt;
 
-  while ((opt = getopt(argc, argv, "p:c:h")) != -1) {
+  while ((opt = getopt_long(argc, argv, short_opts, long_opts, NULL)) != -1) {
     switch (opt) {
     case 'p':
-      *server_port = htons(atoi(optarg));
+      ctx->port = htons(atoi(optarg));
       break;
-
     case 'h':
       return 1;
     }
   }
 
-  if (!(*server_port)) {
+  if (!ctx->port) {
     return 1;
   }
 
@@ -64,11 +73,14 @@ static void handle_client(int client_fd) {
   }
 }
 
-static int run(struct sockaddr_in *s_addr) {
+static int run(struct rsh_ctx_t *ctx) {
   int s_fd, c_fd;
   struct sockaddr_in c_addr;
   socklen_t cli_len = sizeof(c_addr);
   struct timeval rd_timeout;
+  struct sockaddr_in addr;
+
+  memset(&addr, 0, sizeof(struct sockaddr_in));
 
   if ((s_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
     RSH_ERROR("fail to create the server socket!\n");
@@ -76,8 +88,9 @@ static int run(struct sockaddr_in *s_addr) {
     return 1;
   }
 
-  s_addr->sin_family = AF_INET;
-  s_addr->sin_addr.s_addr = htonl(INADDR_ANY);
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  addr.sin_port = ctx->port;
 
   rd_timeout.tv_sec = 0;
   rd_timeout.tv_usec = 200000;
@@ -87,7 +100,7 @@ static int run(struct sockaddr_in *s_addr) {
              sizeof(struct timeval));
 
   // bind the server to specified port
-  if (bind(s_fd, (struct sockaddr *)s_addr, sizeof(struct sockaddr)) == -1) {
+  if (bind(s_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr)) == -1) {
     RSH_ERROR("fail to bind the server to specified port!\n");
     close(s_fd);
 
@@ -119,18 +132,17 @@ static int run(struct sockaddr_in *s_addr) {
 }
 
 int main(int argc, char *argv[]) {
-  struct sockaddr_in addr;
-  int ret;
+  struct rsh_ctx_t ctx;
 
-  memset(&addr, 0, sizeof(struct sockaddr_in));
+  memset(&ctx, 0, sizeof(struct rsh_ctx_t));
 
   // parse the server port
-  if (parse_args(argc, argv, &addr.sin_port)) {
+  if (parse_args(argc, argv, &ctx)) {
     usage(argv[0]);
     exit(EXIT_FAILURE);
   }
 
-  ret = run(&addr);
+  int ret = run(&ctx);
 
   exit(!ret ? EXIT_SUCCESS : EXIT_FAILURE);
 }

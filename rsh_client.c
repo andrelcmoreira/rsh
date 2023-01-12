@@ -9,29 +9,38 @@
 #include "common.h"
 
 static void usage(const char *progname) {
-  RSH_LOG("%s\nusage: %s -s <server_ip> -p <server_port>\n", BANNER, progname);
+  const char *banner = BANNER;
+
+  RSH_LOG(
+      "%s\nusage: %s [OPTIONS]\n\n"
+      "OPTIONS\n"
+      " -p, --port <port>        Specify the port of the server\n"
+      " -s, --server-addr <addr> Specify the server address\n"
+      " -h, --help               Show the usage\n", banner, progname);
 }
 
-static int parse_args(int argc, char *argv[], struct in_addr *addr,
-                      in_port_t *server_port) {
+static int parse_args(int argc, char *argv[], struct rsh_ctx_t *ctx) {
+  const char *short_opts = "p:s:h";
+  const struct option long_opts[] = {
+    { "port", required_argument, NULL, 'p' },
+    { "server-addr", required_argument, NULL, 's' },
+    { "help", no_argument, NULL, 'h' }};
   int opt;
 
-  while ((opt = getopt(argc, argv, "p:s:h")) != -1) {
+  while ((opt = getopt_long(argc, argv, short_opts, long_opts, NULL)) != -1) {
     switch (opt) {
     case 'p':
-      *server_port = htons(atoi(optarg));
+      ctx->port = htons(atoi(optarg));
       break;
-
     case 's':
-      inet_aton(optarg, addr);
+      memcpy(ctx->ip, optarg, sizeof(ctx->ip) - 1);
       break;
-
     case 'h':
       return 1;
     }
   }
 
-  if (!(*server_port) || !addr->s_addr) {
+  if (!ctx->port || (ctx->ip[0] == '\0')) {
     return 1;
   }
 
@@ -48,10 +57,15 @@ static void exec_shell(int fd) {
   execv(cmd[0], cmd);
 }
 
-static int run(struct sockaddr_in *addr) {
+static int run(struct rsh_ctx_t *ctx) {
+  struct sockaddr_in addr;
   int fd;
 
-  addr->sin_family = AF_INET;
+  memset(&addr, 0, sizeof(struct sockaddr_in));
+
+  addr.sin_family = AF_INET;
+  addr.sin_port = ctx->port;
+  inet_aton(ctx->ip, &addr.sin_addr);
 
   if ((fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
     RSH_ERROR("fail to create the communication socket!\n");
@@ -60,7 +74,7 @@ static int run(struct sockaddr_in *addr) {
 
   RSH_INFO("trying to connect to server...\n");
 
-  if (connect(fd, (struct sockaddr *)addr, sizeof(struct sockaddr))) {
+  if (connect(fd, (struct sockaddr *)&addr, sizeof(struct sockaddr))) {
     RSH_ERROR("fail to connect to server!\n");
     close(fd);
 
@@ -75,19 +89,18 @@ static int run(struct sockaddr_in *addr) {
 }
 
 int main(int argc, char *argv[]) {
-  struct sockaddr_in addr;
-  int ret;
+  struct rsh_ctx_t ctx;
 
-  memset(&addr, 0, sizeof(struct sockaddr_in));
+  memset(&ctx, 0, sizeof(struct rsh_ctx_t));
 
   // parse the server ip and port
-  if (parse_args(argc, argv, &addr.sin_addr, &addr.sin_port)) {
+  if (parse_args(argc, argv, &ctx)) {
     usage(argv[0]);
     exit(EXIT_FAILURE);
   }
 
   // run the client
-  ret = run(&addr);
+  int ret = run(&ctx);
 
   exit(!ret ? EXIT_SUCCESS : EXIT_FAILURE);
 }
