@@ -14,20 +14,16 @@ static void usage(const char *progname) {
   RSH_LOG(
       "%s\nusage: %s [OPTIONS]\n\n"
       "OPTIONS\n"
-      " -p, --port <port>        Specify the port of the server\n"
-      " -s, --server-addr <addr> Specify the server address\n"
-      " -h, --help               Show the usage\n", banner, progname);
+      " -p <port> Specify the port of the server\n"
+      " -s <addr> Specify the server address\n"
+      " -h        Show the usage\n", banner, progname);
 }
 
 static int parse_args(int argc, char *argv[], struct rsh_ctx_t *ctx) {
   const char *short_opts = "p:s:h";
-  const struct option long_opts[] = {
-    { "port", required_argument, NULL, 'p' },
-    { "server-addr", required_argument, NULL, 's' },
-    { "help", no_argument, NULL, 'h' }};
   int opt;
 
-  while ((opt = getopt_long(argc, argv, short_opts, long_opts, NULL)) != -1) {
+  while ((opt = getopt(argc, argv, short_opts)) != -1) {
     switch (opt) {
     case 'p':
       ctx->port = htons(atoi(optarg));
