@@ -77,17 +77,11 @@ static int run(struct rsh_ctx_t *ctx) {
   struct timeval rd_timeout;
   struct sockaddr_in addr;
 
-  memset(&addr, 0, sizeof(struct sockaddr_in));
-
   if ((s_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
     RSH_ERROR("fail to create the server socket!\n");
 
     return 1;
   }
-
-  addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  addr.sin_port = ctx->port;
 
   rd_timeout.tv_sec = 0;
   rd_timeout.tv_usec = 200000;
@@ -95,6 +89,12 @@ static int run(struct rsh_ctx_t *ctx) {
   // set the timeout for read operations
   setsockopt(s_fd, SOL_SOCKET, SO_RCVTIMEO, &rd_timeout,
              sizeof(struct timeval));
+
+  memset(&addr, 0, sizeof(struct sockaddr_in));
+
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  addr.sin_port = ctx->port;
 
   // bind the server to specified port
   if (bind(s_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr)) == -1) {

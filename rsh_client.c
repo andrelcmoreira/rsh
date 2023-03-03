@@ -57,16 +57,16 @@ static int run(struct rsh_ctx_t *ctx) {
   struct sockaddr_in addr;
   int fd;
 
+  if ((fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+    RSH_ERROR("fail to create the communication socket!\n");
+    return 1;
+  }
+
   memset(&addr, 0, sizeof(struct sockaddr_in));
 
   addr.sin_family = AF_INET;
   addr.sin_port = ctx->port;
   inet_aton(ctx->ip, &addr.sin_addr);
-
-  if ((fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-    RSH_ERROR("fail to create the communication socket!\n");
-    return 1;
-  }
 
   RSH_INFO("trying to connect to server...\n");
 
