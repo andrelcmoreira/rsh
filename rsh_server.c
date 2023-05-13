@@ -1,5 +1,7 @@
 #include <arpa/inet.h>
 #include <getopt.h>
+#include <stdbool.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +10,14 @@
 #include <unistd.h>
 
 #include "rsh.h"
+
+volatile bool user_abort = false;
+
+static void sig_handler(int signum) {
+  (void)signum;
+
+  user_abort = true;
+}
 
 static void usage(const char *progname) {
   const char *banner = BANNER;
@@ -55,7 +65,7 @@ static void handle_client(int client_fd) {
   // read the prompt
   read_cli_buffer(client_fd);
 
-  while (1) {
+  while (!user_abort) {
     memset(kb_buffer, 0, sizeof(kb_buffer));
     fgets(kb_buffer, sizeof(kb_buffer), stdin);
 
@@ -113,7 +123,7 @@ static int run(struct rsh_ctx_t *ctx) {
 
   RSH_INFO("starting server...\n");
 
-  while (1) {
+  while (!user_abort) {
     c_fd = accept(s_fd, (struct sockaddr *)&c_addr, &cli_len);
 
     if (c_fd > 0) {
@@ -122,6 +132,8 @@ static int run(struct rsh_ctx_t *ctx) {
       RSH_INFO("client %s disconnected\n", inet_ntoa(c_addr.sin_addr));
     }
   }
+
+  RSH_INFO("exiting...\n");
 
   close(s_fd);
 
@@ -138,6 +150,11 @@ int main(int argc, char *argv[]) {
     usage(argv[0]);
     exit(EXIT_FAILURE);
   }
+
+  signal(SIGINT, sig_handler);
+  signal(SIGKILL, sig_handler);
+  signal(SIGTERM, sig_handler);
+  signal(SIGQUIT, sig_handler);
 
   int ret = run(&ctx);
 
