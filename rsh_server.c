@@ -7,7 +7,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "common.h"
+#include "rsh.h"
 
 static void usage(const char *progname) {
   const char *banner = BANNER;
