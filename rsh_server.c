@@ -16,7 +16,7 @@ static void usage(const char *progname) {
       "%s\nusage: %s [OPTIONS]\n\n"
       "OPTIONS\n"
       " -p <port> Specify the port to bind the server to\n"
-      " -h        Show the usage\n", banner, progname);
+      " -h        Show this message\n", banner, progname);
 }
 
 static int parse_args(int argc, char *argv[], struct rsh_ctx_t *ctx) {

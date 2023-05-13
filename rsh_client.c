@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <unistd.h>
 
 #include "rsh.h"
@@ -16,7 +15,7 @@ static void usage(const char *progname) {
       "OPTIONS\n"
       " -p <port> Specify the port of the server\n"
       " -s <addr> Specify the server address\n"
-      " -h        Show the usage\n", banner, progname);
+      " -h        Show this message\n", banner, progname);
 }
 
 static int parse_args(int argc, char *argv[], struct rsh_ctx_t *ctx) {
