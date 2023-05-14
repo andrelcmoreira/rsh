@@ -55,7 +55,6 @@ static void read_cli_buffer(int client_fd) {
 
   while (read(client_fd, &cli_buffer, sizeof(cli_buffer)) > 0) {
     RSH_LOG("%c", cli_buffer);
-    cli_buffer = '\0';
   }
 }
 
@@ -71,7 +70,7 @@ static void handle_client(int client_fd) {
 
     // issue the command
     write(client_fd, kb_buffer, strlen(kb_buffer));
-    if (!strcmp(kb_buffer, "exit\n")) {
+    if (!strncmp(kb_buffer, "exit\n", 5)) {
       break;
     }
 
