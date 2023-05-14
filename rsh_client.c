@@ -76,7 +76,7 @@ static int run(struct rsh_ctx_t *ctx) {
     return 1;
   }
 
-  RSH_INFO("connection estabilished!\n");
+  RSH_INFO("connection established!\n");
 
   exec_shell(fd);
 

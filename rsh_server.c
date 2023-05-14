@@ -25,7 +25,7 @@ static void usage(const char *progname) {
   RSH_LOG(
       "%s\nusage: %s [OPTIONS]\n\n"
       "OPTIONS\n"
-      " -p <port> Specify the port to bind the server to\n"
+      " -p <port> Specify the port to bind the server\n"
       " -h        Show this message\n", banner, progname);
 }
 
