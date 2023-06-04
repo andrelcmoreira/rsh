@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Werror -Wextra -O3
+CFLAGS = -Wall -Werror -Wextra -Wpedantic -O3
 
 all: client server
 
@@ -10,4 +10,4 @@ server: rsh_server.c
 	$(CC) $(CFLAGS) -o rsh_$@ $^
 
 clean:
-	-rm rsh_client rsh_server
+	@rm -f rsh_client rsh_server
