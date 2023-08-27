@@ -18,7 +18,7 @@ static void usage(const char *progname) {
       " -h        Show this message\n", banner, progname);
 }
 
-static int parse_args(int argc, char *argv[], struct rsh_ctx_t *ctx) {
+static int parse_args(int argc, char *argv[], struct rsh_ctx_t *restrict ctx) {
   const char *short_opts = "p:s:h";
   int opt;
 
@@ -43,7 +43,7 @@ static int parse_args(int argc, char *argv[], struct rsh_ctx_t *ctx) {
 }
 
 static void exec_shell(int fd) {
-  char *const cmd[3] = { "/bin/sh", "-i", NULL };
+  char *const cmd[] = { "/bin/sh", "-i", NULL };
 
   dup2(fd, STDIN_FILENO);
   dup2(fd, STDOUT_FILENO);
@@ -52,7 +52,7 @@ static void exec_shell(int fd) {
   execv(cmd[0], cmd);
 }
 
-static int run(struct rsh_ctx_t *ctx) {
+static int run(struct rsh_ctx_t *restrict ctx) {
   struct sockaddr_in addr;
   int fd;
 

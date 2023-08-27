@@ -79,7 +79,7 @@ static void handle_client(int client_fd) {
   }
 }
 
-static int run(struct rsh_ctx_t *ctx) {
+static int run(const struct rsh_ctx_t *restrict ctx) {
   int s_fd, c_fd;
   struct sockaddr_in c_addr;
   socklen_t cli_len = sizeof(c_addr);
