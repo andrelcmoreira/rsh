@@ -52,7 +52,7 @@ static void exec_shell(int fd) {
   execv(cmd[0], cmd);
 }
 
-static int run(struct rsh_ctx_t *restrict ctx) {
+static int run(const struct rsh_ctx_t *restrict ctx) {
   struct sockaddr_in addr;
   int fd;
 
