@@ -29,7 +29,7 @@ static void usage(const char *progname) {
       " -h        Show this message\n", banner, progname);
 }
 
-static int parse_args(int argc, char *argv[], struct rsh_ctx_t *ctx) {
+static int parse_args(int argc, char *argv[], rsh_ctx_t *ctx) {
   const char *short_opts = "p:h";
   int opt;
 
@@ -79,7 +79,7 @@ static void handle_client(int client_fd) {
   }
 }
 
-static int run(const struct rsh_ctx_t *restrict ctx) {
+static int run(const rsh_ctx_t *restrict ctx) {
   int s_fd, c_fd;
   struct sockaddr_in c_addr;
   socklen_t cli_len = sizeof(c_addr);
@@ -140,9 +140,9 @@ static int run(const struct rsh_ctx_t *restrict ctx) {
 }
 
 int main(int argc, char *argv[]) {
-  struct rsh_ctx_t ctx;
+  rsh_ctx_t ctx;
 
-  memset(&ctx, 0, sizeof(struct rsh_ctx_t));
+  memset(&ctx, 0, sizeof(rsh_ctx_t));
 
   // parse the server port
   if (parse_args(argc, argv, &ctx)) {

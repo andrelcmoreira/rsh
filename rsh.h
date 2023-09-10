@@ -1,5 +1,5 @@
-#ifndef COMMON_H_
-#define COMMON_H_
+#ifndef RSH_H_
+#define RSH_H_
 
 #include <stdint.h>
 
@@ -16,9 +16,9 @@
 #define RSH_ERROR(...) fprintf(stderr, "[-] "__VA_ARGS__)
 #define RSH_INFO(...)  fprintf(stdout, "[+] "__VA_ARGS__)
 
-struct rsh_ctx_t {
+typedef struct {
   char ip[16];
   uint32_t port;
-};
+} rsh_ctx_t;
 
-#endif  // !COMMON_H_
+#endif  // !RSH_H_
