@@ -61,10 +61,9 @@ static void read_cli_buffer(int client_fd) {
 static void handle_client(int client_fd) {
   char kb_buffer[1024];
 
-  // read the prompt
-  read_cli_buffer(client_fd);
-
   while (!user_abort) {
+    read_cli_buffer(client_fd);
+
     memset(kb_buffer, 0, sizeof(kb_buffer));
     fgets(kb_buffer, sizeof(kb_buffer), stdin);
 
@@ -73,9 +72,6 @@ static void handle_client(int client_fd) {
     if (!strncmp(kb_buffer, "exit\n", 5)) {
       break;
     }
-
-    // read the result
-    read_cli_buffer(client_fd);
   }
 }
 
