@@ -20,13 +20,11 @@ static void sig_handler(int signum) {
 }
 
 static void usage(const char *progname) {
-  const char *banner = BANNER;
-
   RSH_LOG(
-      "%s\nusage: %s [OPTIONS]\n\n"
+      "%sv%s\n%s\nusage: %s [OPTIONS]\n\n"
       "OPTIONS\n"
       " -p <port> Specify the port to bind the server\n"
-      " -h        Show this message\n", banner, progname);
+      " -h        Show this message\n", BANNER, VERSION, DESC, progname);
 }
 
 static int parse_args(int argc, char *argv[], rsh_ctx_t *ctx) {

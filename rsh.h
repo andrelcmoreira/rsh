@@ -4,12 +4,14 @@
 #include <stdint.h>
 
 #define BANNER \
-    "          _       \n" \
-    " _ __ ___| |__    \n" \
-    "| '__/ __| '_ \\  \n" \
-    "| |  \\__ \\ | | |\n" \
-    "|_|  |___/_| |_|  \n" \
-    "(r)everse(sh)ell\n"
+    "             _       \n" \
+    "    _ __ ___| |__    \n" \
+    "   | '__/ __| '_ \\  \n" \
+    "   | |  \\__ \\ | | |\n" \
+    "   |_|  |___/_| |_| "
+
+#define DESC \
+    "   (r)everse(sh)ell\n"
 
 // logging
 #define RSH_LOG(...)   fprintf(stdout, __VA_ARGS__)
