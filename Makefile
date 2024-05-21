@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Werror -Wextra -Wpedantic -O3
+CFLAGS = -Wall -Werror -Wextra -Wpedantic -O3 -s
 VERSION = $(shell git describe --tags)
 
 all: client server
