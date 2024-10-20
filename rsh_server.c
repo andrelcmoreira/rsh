@@ -1,5 +1,6 @@
 #include <arpa/inet.h>
 #include <getopt.h>
+#include <netinet/in.h>
 #include <stdbool.h>
 #include <signal.h>
 #include <stdio.h>
