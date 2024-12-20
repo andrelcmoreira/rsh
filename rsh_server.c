@@ -1,4 +1,5 @@
 #include <arpa/inet.h>
+#include <errno.h>
 #include <getopt.h>
 #include <netinet/in.h>
 #include <stdbool.h>
@@ -6,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
@@ -80,6 +82,8 @@ static int run(const rsh_ctx_t *restrict ctx) {
   socklen_t cli_len = sizeof(c_addr);
   struct timeval rd_timeout;
   struct sockaddr_in addr;
+  fd_set set;
+  int ret;
 
   if ((s_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
     RSH_ERROR("fail to create the server socket!\n");
@@ -117,13 +121,24 @@ static int run(const rsh_ctx_t *restrict ctx) {
 
   RSH_INFO("starting server...\n");
 
-  while (!user_abort) {
-    c_fd = accept(s_fd, (struct sockaddr *)&c_addr, &cli_len);
+  while (1) {
+    FD_ZERO(&set);
+    FD_SET(s_fd, &set);
 
-    if (c_fd > 0) {
-      RSH_INFO("client %s connected\n", inet_ntoa(c_addr.sin_addr));
-      handle_client(c_fd);
-      RSH_INFO("client %s disconnected\n", inet_ntoa(c_addr.sin_addr));
+    ret = select(s_fd + 1, &set, NULL, NULL, NULL);
+    if (ret == -1) {
+      RSH_INFO("%s\n", strerror(errno));
+      break;
+    }
+
+    if (FD_ISSET(s_fd, &set)) {
+      c_fd = accept(s_fd, (struct sockaddr *)&c_addr, &cli_len);
+
+      if (c_fd > 0) {
+        RSH_INFO("client %s connected\n", inet_ntoa(c_addr.sin_addr));
+        handle_client(c_fd);
+        RSH_INFO("client %s disconnected\n", inet_ntoa(c_addr.sin_addr));
+      }
     }
   }
 
@@ -152,5 +167,5 @@ int main(int argc, char *argv[]) {
 
   int ret = run(&ctx);
 
-  exit(!ret ? EXIT_SUCCESS : EXIT_FAILURE);
+  exit(ret);
 }

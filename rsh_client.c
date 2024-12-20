@@ -97,5 +97,5 @@ int main(int argc, char *argv[]) {
   // run the client
   int ret = run(&ctx);
 
-  exit(!ret ? EXIT_SUCCESS : EXIT_FAILURE);
+  exit(ret);
 }
