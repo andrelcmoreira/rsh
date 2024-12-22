@@ -9,33 +9,52 @@
 
 #include "rsh.h"
 
+#define DEFAULT_RETRY_INTERVAL  10
+#define DEFAULT_RETRY_COUNT     20
+
 static void usage(const char *progname) {
   RSH_LOG(
       "%sv%s\n%s\nusage: %s [OPTIONS]\n\n"
       "OPTIONS\n"
       " -p <port> Specify the port of the server\n"
+      " -i <interval> Specify the retry interval for server connection\n"
+      " -c <count> Specify the retry count for server connection\n"
       " -s <addr> Specify the server address\n"
       " -h        Show this message\n", BANNER, VERSION, FOOTER, progname);
 }
 
-static int parse_args(int argc, char *argv[], rsh_ctx_t *restrict ctx) {
-  const char *short_opts = "p:s:h";
+static int parse_args(int argc, char *argv[], rsh_cfg_t *restrict cfg) {
+  const char *short_opts = "p:s:i:c:h";
   int opt;
 
   while ((opt = getopt(argc, argv, short_opts)) != -1) {
     switch (opt) {
+    case 'c':
+      cfg->retry_count = atoi(optarg);
+      break;
+    case 'i':
+      cfg->retry_interval = atoi(optarg);
+      break;
     case 'p':
-      ctx->port = htons(atoi(optarg));
+      cfg->port = htons(atoi(optarg));
       break;
     case 's':
-      memcpy(ctx->ip, optarg, sizeof(ctx->ip) - 1);
+      memcpy(cfg->ip, optarg, sizeof(cfg->ip) - 1);
       break;
     case 'h':
       return 1;
     }
   }
 
-  if (!ctx->port || (ctx->ip[0] == '\0')) {
+  if (!cfg->retry_interval) {
+    cfg->retry_interval = DEFAULT_RETRY_INTERVAL;
+  }
+
+  if (!cfg->retry_count) {
+    cfg->retry_count = DEFAULT_RETRY_COUNT;
+  }
+
+  if (!cfg->port || (cfg->ip[0] == '\0')) {
     return 1;
   }
 
@@ -52,7 +71,7 @@ static void exec_shell(int fd) {
   execv(cmd[0], cmd);
 }
 
-static int run(const rsh_ctx_t *restrict ctx) {
+static int run(const rsh_cfg_t *restrict cfg) {
   struct sockaddr_in addr;
   int fd;
 
@@ -64,16 +83,20 @@ static int run(const rsh_ctx_t *restrict ctx) {
   memset(&addr, 0, sizeof(struct sockaddr_in));
 
   addr.sin_family = AF_INET;
-  addr.sin_port = ctx->port;
-  inet_aton(ctx->ip, &addr.sin_addr);
+  addr.sin_port = cfg->port;
+  inet_aton(cfg->ip, &addr.sin_addr);
 
-  RSH_INFO("trying to connect to server...\n");
+  for (uint8_t i = 1; i <= cfg->retry_count; i++) {
+    RSH_INFO("trying to connect to server...%u of %u\n", i, cfg->retry_count);
 
-  if (connect(fd, (struct sockaddr *)&addr, sizeof(struct sockaddr))) {
-    RSH_ERROR("fail to connect to server!\n");
-    close(fd);
+    if (!connect(fd, (struct sockaddr *)&addr, sizeof(struct sockaddr))) {
+      break;
+    }
 
-    return 1;
+    RSH_ERROR("fail to connect to server!trying again in %u secs\n",
+              cfg->retry_interval);
+
+    usleep(cfg->retry_interval * 1000000);
   }
 
   RSH_INFO("connection established!\n");
@@ -84,18 +107,18 @@ static int run(const rsh_ctx_t *restrict ctx) {
 }
 
 int main(int argc, char *argv[]) {
-  rsh_ctx_t ctx;
+  rsh_cfg_t cfg;
 
-  memset(&ctx, 0, sizeof(rsh_ctx_t));
+  memset(&cfg, 0, sizeof(rsh_cfg_t));
 
   // parse the server ip and port
-  if (parse_args(argc, argv, &ctx)) {
+  if (parse_args(argc, argv, &cfg)) {
     usage(argv[0]);
     exit(EXIT_FAILURE);
   }
 
   // run the client
-  int ret = run(&ctx);
+  int ret = run(&cfg);
 
   exit(ret);
 }

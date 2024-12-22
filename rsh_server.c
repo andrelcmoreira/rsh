@@ -30,21 +30,21 @@ static void usage(const char *progname) {
       " -h        Show this message\n", BANNER, VERSION, FOOTER, progname);
 }
 
-static int parse_args(int argc, char *argv[], rsh_ctx_t *ctx) {
+static int parse_args(int argc, char *argv[], rsh_cfg_t *restrict cfg) {
   const char *short_opts = "p:h";
   int opt;
 
   while ((opt = getopt(argc, argv, short_opts)) != -1) {
     switch (opt) {
     case 'p':
-      ctx->port = htons(atoi(optarg));
+      cfg->port = htons(atoi(optarg));
       break;
     case 'h':
       return 1;
     }
   }
 
-  if (!ctx->port) {
+  if (!cfg->port) {
     return 1;
   }
 
@@ -76,7 +76,7 @@ static void handle_client(int client_fd) {
   }
 }
 
-static int run(const rsh_ctx_t *restrict ctx) {
+static int run(const rsh_cfg_t *restrict cfg) {
   int s_fd, c_fd;
   struct sockaddr_in c_addr;
   socklen_t cli_len = sizeof(c_addr);
@@ -102,7 +102,7 @@ static int run(const rsh_ctx_t *restrict ctx) {
 
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  addr.sin_port = ctx->port;
+  addr.sin_port = cfg->port;
 
   // bind the server to specified port
   if (bind(s_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr)) == -1) {
@@ -150,12 +150,12 @@ static int run(const rsh_ctx_t *restrict ctx) {
 }
 
 int main(int argc, char *argv[]) {
-  rsh_ctx_t ctx;
+  rsh_cfg_t cfg;
 
-  memset(&ctx, 0, sizeof(rsh_ctx_t));
+  memset(&cfg, 0, sizeof(rsh_cfg_t));
 
   // parse the server port
-  if (parse_args(argc, argv, &ctx)) {
+  if (parse_args(argc, argv, &cfg)) {
     usage(argv[0]);
     exit(EXIT_FAILURE);
   }
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
   signal(SIGTERM, sig_handler);
   signal(SIGQUIT, sig_handler);
 
-  int ret = run(&ctx);
+  int ret = run(&cfg);
 
   exit(ret);
 }

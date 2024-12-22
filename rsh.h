@@ -21,6 +21,8 @@
 typedef struct {
   char ip[16];
   uint32_t port;
-} rsh_ctx_t;
+  uint16_t retry_count;
+  uint8_t retry_interval;
+} rsh_cfg_t;
 
 #endif  // !RSH_H_
