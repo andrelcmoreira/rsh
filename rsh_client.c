@@ -16,11 +16,11 @@ static void usage(const char *progname) {
   RSH_LOG(
       "%sv%s\n%s\nusage: %s [OPTIONS]\n\n"
       "OPTIONS\n"
-      " -p <port> Specify the port of the server\n"
+      " -p <port>     Specify the port of the server\n"
       " -i <interval> Specify the retry interval for server connection\n"
-      " -c <count> Specify the retry count for server connection\n"
-      " -s <addr> Specify the server address\n"
-      " -h        Show this message\n", BANNER, VERSION, FOOTER, progname);
+      " -c <count>    Specify the retry count for server connection\n"
+      " -s <addr>     Specify the server address\n"
+      " -h            Show this message\n", BANNER, VERSION, FOOTER, progname);
 }
 
 static int parse_args(int argc, char *argv[], rsh_cfg_t *restrict cfg) {
