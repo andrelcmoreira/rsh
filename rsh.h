@@ -20,7 +20,7 @@
 
 typedef struct {
   char ip[16];
-  uint32_t port;
+  uint16_t port;
   uint16_t retry_count;
   uint8_t retry_interval;
 } rsh_cfg_t;
