@@ -10,7 +10,7 @@
 #include "rsh.h"
 
 #define DEFAULT_RETRY_INTERVAL  10
-#define DEFAULT_RETRY_COUNT     20
+#define DEFAULT_RETRY_COUNT     100
 
 static void usage(const char *progname) {
   RSH_LOG(
@@ -90,7 +90,8 @@ static int run(const rsh_cfg_t *restrict cfg) {
     RSH_INFO("trying to connect to server...%u of %u\n", i, cfg->retry_count);
 
     if (!connect(fd, (struct sockaddr *)&addr, sizeof(struct sockaddr))) {
-      break;
+      RSH_INFO("connection established!\n");
+      exec_shell(fd);
     }
 
     RSH_ERROR("fail to connect to server!trying again in %u secs\n",
@@ -99,11 +100,9 @@ static int run(const rsh_cfg_t *restrict cfg) {
     usleep(cfg->retry_interval * 1000000);
   }
 
-  RSH_INFO("connection established!\n");
+  RSH_ERROR("server unavailable, exiting...\n");
 
-  exec_shell(fd);
-
-  return 0;  // normally never reached
+  return 1;
 }
 
 int main(int argc, char *argv[]) {
