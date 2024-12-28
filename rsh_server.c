@@ -24,7 +24,7 @@ static void sig_handler(int signum) {
 
 static void usage(const char *progname) {
   RSH_LOG(
-      "%sv%s\n%s\nusage: %s [OPTIONS]\n\n"
+      "%sv%s\n%s\nUsage: %s [OPTIONS]\n\n"
       "OPTIONS\n"
       " -p <port> Specify the port to bind the server\n"
       " -h        Show this message\n", BANNER, VERSION, FOOTER, progname);
@@ -86,7 +86,7 @@ static int run(const rsh_cfg_t *restrict cfg) {
   int ret;
 
   if ((s_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-    RSH_ERROR("fail to create the server socket!\n");
+    RSH_ERROR("Fail to create the server socket!\n");
 
     return 1;
   }
@@ -106,20 +106,20 @@ static int run(const rsh_cfg_t *restrict cfg) {
 
   // bind the server to specified port
   if (bind(s_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr)) == -1) {
-    RSH_ERROR("fail to bind the server to specified port!\n");
+    RSH_ERROR("Fail to bind the server to specified port!\n");
     close(s_fd);
 
     return 1;
   }
 
   if (listen(s_fd, 1) == -1) {
-    RSH_ERROR("fail to configure the server to listen connections!\n");
+    RSH_ERROR("Fail to configure the server to listen connections!\n");
     close(s_fd);
 
     return 1;
   }
 
-  RSH_INFO("starting server...\n");
+  RSH_INFO("Starting server...\n");
 
   while (1) {
     FD_ZERO(&set);
@@ -135,14 +135,14 @@ static int run(const rsh_cfg_t *restrict cfg) {
       c_fd = accept(s_fd, (struct sockaddr *)&c_addr, &cli_len);
 
       if (c_fd > 0) {
-        RSH_INFO("client %s connected\n", inet_ntoa(c_addr.sin_addr));
+        RSH_INFO("Client %s connected\n", inet_ntoa(c_addr.sin_addr));
         handle_client(c_fd);
-        RSH_INFO("client %s disconnected\n", inet_ntoa(c_addr.sin_addr));
+        RSH_INFO("Client %s disconnected\n", inet_ntoa(c_addr.sin_addr));
       }
     }
   }
 
-  RSH_INFO("exiting...\n");
+  RSH_INFO("Exiting...\n");
 
   close(s_fd);
 
