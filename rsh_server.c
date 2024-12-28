@@ -14,6 +14,10 @@
 
 #include "rsh.h"
 
+#define END_OF_TEXT_BYTE               '\x03'
+#define END_OF_TRANSMISSION_BYTE       '\x04'
+#define TERM_CMD                       " ; printf \"\x03\x04\"\n"
+
 volatile bool user_abort = false;
 
 static void sig_handler(int signum) {
@@ -53,13 +57,34 @@ static int parse_args(int argc, char *argv[], rsh_cfg_t *restrict cfg) {
 
 static void read_cli_buffer(int client_fd) {
   char cli_buffer;
+  bool eotrs = false;
+  bool eotxt = false;
 
-  while (read(client_fd, &cli_buffer, sizeof(cli_buffer)) > 0) {
-    RSH_LOG("%c", cli_buffer);
+  while (1) {
+    if (read(client_fd, &cli_buffer, sizeof(cli_buffer)) <= 0) {
+      break;
+    }
+
+    if (eotrs && eotxt && (cli_buffer == ' ')) {
+      RSH_LOG("%c", cli_buffer);
+      break;
+    }
+
+    switch (cli_buffer) {
+    case END_OF_TRANSMISSION_BYTE:
+      eotrs = true;
+      break;
+    case END_OF_TEXT_BYTE:
+      eotxt = true;
+      break;
+    default:
+      RSH_LOG("%c", cli_buffer);
+    }
   }
 }
 
 static void handle_client(int client_fd) {
+  // TODO: improve this function
   char kb_buffer[1024];
 
   while (!user_abort) {
@@ -68,9 +93,12 @@ static void handle_client(int client_fd) {
     memset(kb_buffer, 0, sizeof(kb_buffer));
     fgets(kb_buffer, sizeof(kb_buffer), stdin);
 
+    // TODO: address enter scenario
+    memcpy(&kb_buffer[strlen(kb_buffer) - 1], TERM_CMD, strlen(TERM_CMD));
+
     // issue the command
     write(client_fd, kb_buffer, strlen(kb_buffer));
-    if (!strncmp(kb_buffer, "exit\n", 5)) {
+    if (!strncmp(kb_buffer, "exit", 4)) { // TODO: fix it
       break;
     }
   }
