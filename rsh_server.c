@@ -56,17 +56,12 @@ static int parse_args(int argc, char *argv[], rsh_cfg_t *restrict cfg) {
 }
 
 static void read_cli_buffer(int client_fd) {
-  char cli_buffer;
   bool eotrs = false;
   bool eotxt = false;
+  char cli_buffer;
 
   while (1) {
     if (read(client_fd, &cli_buffer, sizeof(cli_buffer)) <= 0) {
-      break;
-    }
-
-    if (eotrs && eotxt && (cli_buffer == ' ')) {
-      RSH_LOG("%c", cli_buffer);
       break;
     }
 
@@ -77,6 +72,11 @@ static void read_cli_buffer(int client_fd) {
     case END_OF_TEXT_BYTE:
       eotxt = true;
       break;
+    case ' ':
+      if (eotrs && eotxt) {
+        RSH_LOG("%c", cli_buffer);
+        return;
+      }
     default:
       RSH_LOG("%c", cli_buffer);
     }
