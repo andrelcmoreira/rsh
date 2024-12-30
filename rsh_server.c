@@ -74,10 +74,11 @@ static void read_cli_buffer(int client_fd) {
       eotxt = true;
       break;
     case ' ':
+      RSH_RAW_LOG("%c", cli_buffer);
       if (eotrs && eotxt) {
-        RSH_RAW_LOG("%c", cli_buffer);
         return;
       }
+      break;
     default:
       RSH_RAW_LOG("%c", cli_buffer);
     }
@@ -85,8 +86,8 @@ static void read_cli_buffer(int client_fd) {
 }
 
 inline static void assemble_cmd(char *cmd, size_t *cmd_len) {
-  static size_t sep_len = strlen(CMD_SEPARATOR);
-  static size_t term_cmd_len = strlen(TERM_CMD);
+  size_t sep_len = strlen(CMD_SEPARATOR);
+  size_t term_cmd_len = strlen(TERM_CMD);
 
   if (!strcmp(cmd, "\n")) {
     memcpy(&cmd[*cmd_len - 1], TERM_CMD, term_cmd_len);
