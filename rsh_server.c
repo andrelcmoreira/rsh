@@ -16,7 +16,8 @@
 
 #define END_OF_TEXT_BYTE               '\x03'
 #define END_OF_TRANSMISSION_BYTE       '\x04'
-#define TERM_CMD                       " ; printf \"\x03\x04\"\n"
+#define TERM_CMD                       "printf \"\x03\x04\"\n"
+#define CMD_SEPARATOR                   " ; "
 
 volatile bool user_abort = false;
 
@@ -83,9 +84,26 @@ static void read_cli_buffer(int client_fd) {
   }
 }
 
+inline static void assemble_cmd(char *cmd, size_t *cmd_len) {
+  static size_t sep_len = strlen(CMD_SEPARATOR);
+  static size_t term_cmd_len = strlen(TERM_CMD);
+
+  if (!strcmp(cmd, "\n")) {
+    memcpy(&cmd[*cmd_len - 1], TERM_CMD, term_cmd_len);
+
+    *cmd_len = term_cmd_len;
+  } else {
+    memcpy(&cmd[*cmd_len - 1], CMD_SEPARATOR, sep_len);
+    memcpy(cmd + *cmd_len + sep_len, TERM_CMD, term_cmd_len);
+
+    *cmd_len += sep_len;
+    *cmd_len += term_cmd_len;
+  }
+}
+
 static void handle_client(int client_fd) {
-  // TODO: improve this function
   char kb_buffer[1024];
+  size_t buffer_len;
 
   while (!user_abort) {
     read_cli_buffer(client_fd);
@@ -93,11 +111,11 @@ static void handle_client(int client_fd) {
     memset(kb_buffer, 0, sizeof(kb_buffer));
     fgets(kb_buffer, sizeof(kb_buffer), stdin);
 
-    // TODO: address enter scenario
-    memcpy(&kb_buffer[strlen(kb_buffer) - 1], TERM_CMD, strlen(TERM_CMD));
+    buffer_len = strlen(kb_buffer);
+    assemble_cmd(kb_buffer, &buffer_len);
 
     // issue the command
-    write(client_fd, kb_buffer, strlen(kb_buffer));
+    write(client_fd, kb_buffer, buffer_len);
     if (!strncmp(kb_buffer, "exit", 4)) { // TODO: fix it
       break;
     }
