@@ -94,7 +94,7 @@ static int run(const rsh_cfg_t *restrict cfg) {
       exec_shell(fd);
     }
 
-    RSH_LOG("Fail to connect to server!trying again in %u secs\n",
+    RSH_LOG("Fail to connect to server!Trying again in %u secs\n",
             cfg->retry_interval);
 
     usleep(cfg->retry_interval * 1000000);
