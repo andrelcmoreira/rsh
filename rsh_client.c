@@ -13,7 +13,7 @@
 #define DEFAULT_RETRY_COUNT     100
 
 static void usage(const char *progname) {
-  RSH_LOG(
+  RSH_RAW_LOG(
       "%sv%s\n%s\nUsage: %s [OPTIONS]\n\n"
       "OPTIONS\n"
       " -p <port>     Specify the port of the server\n"
@@ -76,7 +76,7 @@ static int run(const rsh_cfg_t *restrict cfg) {
   int fd;
 
   if ((fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-    RSH_ERROR("Fail to create the communication socket!\n");
+    RSH_FATAL("Fail to create the communication socket!\n");
     return 1;
   }
 
@@ -87,20 +87,20 @@ static int run(const rsh_cfg_t *restrict cfg) {
   inet_aton(cfg->ip, &addr.sin_addr);
 
   for (uint8_t i = 1; i <= cfg->retry_count; i++) {
-    RSH_INFO("Trying to connect to server...%u of %u\n", i, cfg->retry_count);
+    RSH_LOG("Trying to connect to server...%u of %u\n", i, cfg->retry_count);
 
     if (!connect(fd, (struct sockaddr *)&addr, sizeof(struct sockaddr))) {
-      RSH_INFO("Connection established!\n");
+      RSH_SUCCESS("Connection established!\n");
       exec_shell(fd);
     }
 
-    RSH_ERROR("Fail to connect to server!trying again in %u secs\n",
-              cfg->retry_interval);
+    RSH_LOG("Fail to connect to server!trying again in %u secs\n",
+            cfg->retry_interval);
 
     usleep(cfg->retry_interval * 1000000);
   }
 
-  RSH_ERROR("Server unavailable, exiting...\n");
+  RSH_FATAL("Server unavailable, exiting...\n");
 
   return 1;
 }

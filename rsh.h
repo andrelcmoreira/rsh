@@ -14,9 +14,10 @@
     "   (r)everse(sh)ell\n"
 
 // logging
-#define RSH_LOG(...)   fprintf(stdout, __VA_ARGS__)
-#define RSH_ERROR(...) fprintf(stderr, "[\033[0;31m-\033[0m] "__VA_ARGS__)
-#define RSH_INFO(...)  fprintf(stdout, "[\033[0;32m+\033[0m] "__VA_ARGS__)
+#define RSH_RAW_LOG(...) fprintf(stdout, __VA_ARGS__)
+#define RSH_LOG(...)     fprintf(stdout, "[*] "__VA_ARGS__)
+#define RSH_FATAL(...)   fprintf(stderr, "[\033[0;31m-\033[0m] "__VA_ARGS__)
+#define RSH_SUCCESS(...) fprintf(stdout, "[\033[0;32m+\033[0m] "__VA_ARGS__)
 
 typedef struct {
   char ip[16];
