@@ -89,7 +89,7 @@ inline static void assemble_cmd(char *cmd, size_t *cmd_len) {
   size_t sep_len = strlen(CMD_SEPARATOR);
   size_t term_cmd_len = strlen(TERM_CMD);
 
-  if (!strcmp(cmd, "\n")) {
+  if (cmd[0] == '\n') {
     memcpy(&cmd[*cmd_len - 1], TERM_CMD, term_cmd_len);
 
     *cmd_len = term_cmd_len;
