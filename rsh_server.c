@@ -59,28 +59,47 @@ static int parse_args(int argc, char *argv[], rsh_cfg_t *restrict cfg) {
 static void read_cli_buffer(int client_fd) {
   bool eotrs = false;
   bool eotxt = false;
+  struct timeval tout;
   char cli_buffer;
+  int ret;
+  fd_set set;
+
+  // TODO: improve this timeout mechanics
+  memset(&tout, 0, sizeof(struct timeval));
+
+  tout.tv_sec = 2;
 
   while (1) {
-    if (read(client_fd, &cli_buffer, sizeof(cli_buffer)) <= 0) {
+    FD_ZERO(&set);
+    FD_SET(client_fd, &set);
+
+    ret = select(client_fd + 1, &set, NULL, NULL, &tout);
+    if (!ret) {
+      break;
+    } else if (ret == -1) {
+      RSH_LOG("%s\n", strerror(errno));
       break;
     }
 
-    switch (cli_buffer) {
-    case END_OF_TRANSMISSION_BYTE:
-      eotrs = true;
-      break;
-    case END_OF_TEXT_BYTE:
-      eotxt = true;
-      break;
-    case ' ':
-      RSH_RAW_LOG("%c", cli_buffer);
-      if (eotrs && eotxt) {
-        return;
+    if (FD_ISSET(client_fd, &set)) {
+      read(client_fd, &cli_buffer, sizeof(cli_buffer));
+
+      switch (cli_buffer) {
+      case END_OF_TRANSMISSION_BYTE:
+        eotrs = true;
+        break;
+      case END_OF_TEXT_BYTE:
+        eotxt = true;
+        break;
+      case ' ':
+        RSH_RAW_LOG("%c", cli_buffer);
+        if (eotrs && eotxt) {
+          return;
+        }
+        break;
+      default:
+        RSH_RAW_LOG("%c", cli_buffer);
       }
-      break;
-    default:
-      RSH_RAW_LOG("%c", cli_buffer);
     }
   }
 }
@@ -126,7 +145,6 @@ static int run(const rsh_cfg_t *restrict cfg) {
   int s_fd, c_fd;
   struct sockaddr_in c_addr;
   socklen_t cli_len = sizeof(c_addr);
-  struct timeval rd_timeout;
   struct sockaddr_in addr;
   fd_set set;
   int ret;
@@ -135,13 +153,6 @@ static int run(const rsh_cfg_t *restrict cfg) {
     RSH_FATAL("Fail to create the server socket!\n");
     return 1;
   }
-
-  rd_timeout.tv_sec = 0;
-  rd_timeout.tv_usec = 200000;
-
-  // set the timeout for read operations
-  setsockopt(s_fd, SOL_SOCKET, SO_RCVTIMEO, &rd_timeout,
-             sizeof(struct timeval));
 
   memset(&addr, 0, sizeof(struct sockaddr_in));
 
