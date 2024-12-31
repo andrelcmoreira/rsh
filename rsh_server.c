@@ -17,6 +17,7 @@
 #define END_OF_TEXT_BYTE               '\x03'
 #define END_OF_TRANSMISSION_BYTE       '\x04'
 #define CMD_SEPARATOR                  " ; "
+#define EXIT_CMD                       "exit\n"
 
 volatile bool user_abort = false;
 
@@ -108,13 +109,14 @@ static void handle_client(int client_fd) {
 
     memset(client_cmd, 0, sizeof(client_cmd));
     memset(user_cmd, 0, sizeof(user_cmd));
+
     fgets(user_cmd, sizeof(user_cmd), stdin);
 
     cmd_len = strlen(user_cmd);
     assemble_cmd(user_cmd, client_cmd, &cmd_len);
     // issue the command
     write(client_fd, client_cmd, cmd_len);
-    if (!strncmp(user_cmd, "exit\n", 5)) {
+    if (!strncmp(user_cmd, EXIT_CMD, strlen(EXIT_CMD))) {
       break;
     }
   }
