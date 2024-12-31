@@ -95,7 +95,7 @@ inline static void assemble_cmd(char *kb_cmd, char *user_cmd,
             END_OF_TRANSMISSION_BYTE);
   }
 
-  *cmd_len += strlen(user_cmd);
+  *cmd_len = strlen(user_cmd);
 }
 
 static void handle_client(int client_fd) {
