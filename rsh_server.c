@@ -16,8 +16,7 @@
 
 #define END_OF_TEXT_BYTE               '\x03'
 #define END_OF_TRANSMISSION_BYTE       '\x04'
-#define TERM_CMD                       "printf \"\x03\x04\"\n"
-#define CMD_SEPARATOR                   " ; "
+#define CMD_SEPARATOR                  " ; "
 
 volatile bool user_abort = false;
 
@@ -29,10 +28,10 @@ static void sig_handler(int signum) {
 
 static void usage(const char *progname) {
   RSH_RAW_LOG(
-      "%sv%s\n%s\nUsage: %s [OPTIONS]\n\n"
-      "OPTIONS\n"
-      " -p <port> Specify the port to bind the server\n"
-      " -h        Show this message\n", BANNER, VERSION, FOOTER, progname);
+    "%sv%s\n%s\nUsage: %s [OPTIONS]\n\n"
+    "OPTIONS\n"
+    " -p <port> Specify the port to bind the server\n"
+    " -h        Show this message\n", BANNER, VERSION, FOOTER, progname);
 }
 
 static int parse_args(int argc, char *argv[], rsh_cfg_t *restrict cfg) {
@@ -85,39 +84,37 @@ static void read_cli_buffer(int client_fd) {
   }
 }
 
-inline static void assemble_cmd(char *cmd, size_t *cmd_len) {
-  size_t sep_len = strlen(CMD_SEPARATOR);
-  size_t term_cmd_len = strlen(TERM_CMD);
-
-  if (cmd[0] == '\n') {
-    memcpy(&cmd[*cmd_len - 1], TERM_CMD, term_cmd_len);
-
-    *cmd_len = term_cmd_len;
+inline static void assemble_cmd(char *kb_cmd, char *user_cmd,
+                                size_t *cmd_len) {
+  if (kb_cmd[0] != '\n') {
+    memcpy(user_cmd, kb_cmd, *cmd_len);
+    sprintf(&user_cmd[*cmd_len - 1], "%sprintf \"%c%c\"\n", CMD_SEPARATOR,
+            END_OF_TEXT_BYTE, END_OF_TRANSMISSION_BYTE);
   } else {
-    memcpy(&cmd[*cmd_len - 1], CMD_SEPARATOR, sep_len);
-    memcpy(cmd + *cmd_len + sep_len, TERM_CMD, term_cmd_len);
-
-    *cmd_len += sep_len;
-    *cmd_len += term_cmd_len;
+    sprintf(&user_cmd[*cmd_len - 1], "printf \"%c%c\"\n", END_OF_TEXT_BYTE,
+            END_OF_TRANSMISSION_BYTE);
   }
+
+  *cmd_len += strlen(user_cmd);
 }
 
 static void handle_client(int client_fd) {
-  char kb_buffer[1024];
-  size_t buffer_len;
+  char user_cmd[1024];
+  char client_cmd[1024];
+  size_t cmd_len;
 
   while (!user_abort) {
     read_cli_buffer(client_fd);
 
-    memset(kb_buffer, 0, sizeof(kb_buffer));
-    fgets(kb_buffer, sizeof(kb_buffer), stdin);
+    memset(client_cmd, 0, sizeof(client_cmd));
+    memset(user_cmd, 0, sizeof(user_cmd));
+    fgets(user_cmd, sizeof(user_cmd), stdin);
 
-    buffer_len = strlen(kb_buffer);
-    assemble_cmd(kb_buffer, &buffer_len);
-
+    cmd_len = strlen(user_cmd);
+    assemble_cmd(user_cmd, client_cmd, &cmd_len);
     // issue the command
-    write(client_fd, kb_buffer, buffer_len);
-    if (!strncmp(kb_buffer, "exit", 4)) { // TODO: fix it
+    write(client_fd, client_cmd, cmd_len);
+    if (!strncmp(user_cmd, "exit\n", 5)) {
       break;
     }
   }
@@ -134,7 +131,6 @@ static int run(const rsh_cfg_t *restrict cfg) {
 
   if ((s_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
     RSH_FATAL("Fail to create the server socket!\n");
-
     return 1;
   }
 
