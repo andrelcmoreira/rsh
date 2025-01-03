@@ -82,7 +82,7 @@ static void read_cli_buffer(int client_fd, int timeout) {
     }
 
     if (FD_ISSET(client_fd, &set)) {
-      read(client_fd, &cli_buffer, sizeof(cli_buffer));
+      (void)!read(client_fd, &cli_buffer, sizeof(cli_buffer));
 
       switch (cli_buffer) {
       case END_OF_TRANSMISSION_BYTE:
@@ -125,19 +125,19 @@ static void handle_client(int client_fd) {
   char client_cmd[1024];
   size_t cmd_len;
 
-  // read the prompt
+  // read the initial prompt
   read_cli_buffer(client_fd, 1);
 
   while (!user_abort) {
     memset(client_cmd, 0, sizeof(client_cmd));
     memset(user_cmd, 0, sizeof(user_cmd));
 
-    fgets(user_cmd, sizeof(user_cmd), stdin);
+    (void)!fgets(user_cmd, sizeof(user_cmd), stdin);
 
     cmd_len = strlen(user_cmd);
     assemble_cmd(user_cmd, client_cmd, &cmd_len);
     // issue the command
-    write(client_fd, client_cmd, cmd_len);
+    (void)!write(client_fd, client_cmd, cmd_len);
     if (!strncmp(user_cmd, EXIT_CMD, exit_cmd_len)) {
       break;
     }
