@@ -18,6 +18,7 @@
 #define END_OF_TRANSMISSION_BYTE       '\x04'
 #define CMD_SEPARATOR                  " ; "
 #define EXIT_CMD                       "exit\n"
+#define CLIENT_REPLY_TIMEOUT           120
 
 volatile bool user_abort = false;
 
@@ -56,7 +57,7 @@ static int parse_args(int argc, char *argv[], rsh_cfg_t *restrict cfg) {
   return 0;
 }
 
-static void read_cli_buffer(int client_fd) {
+static void read_cli_buffer(int client_fd, int timeout) {
   bool eotrs = false;
   bool eotxt = false;
   struct timeval tout;
@@ -64,10 +65,9 @@ static void read_cli_buffer(int client_fd) {
   int ret;
   fd_set set;
 
-  // TODO: improve this timeout mechanics
   memset(&tout, 0, sizeof(struct timeval));
 
-  tout.tv_sec = 2;
+  tout.tv_sec = timeout;
 
   while (1) {
     FD_ZERO(&set);
@@ -92,6 +92,7 @@ static void read_cli_buffer(int client_fd) {
         eotxt = true;
         break;
       case ' ':
+        // TODO: look for a better way to exit the loop
         RSH_RAW_LOG("%c", cli_buffer);
         if (eotrs && eotxt) {
           return;
@@ -119,13 +120,15 @@ inline static void assemble_cmd(char *kb_cmd, char *user_cmd,
 }
 
 static void handle_client(int client_fd) {
+  const size_t exit_cmd_len = strlen(EXIT_CMD);
   char user_cmd[1024];
   char client_cmd[1024];
   size_t cmd_len;
 
-  while (!user_abort) {
-    read_cli_buffer(client_fd);
+  // read the prompt
+  read_cli_buffer(client_fd, 1);
 
+  while (!user_abort) {
     memset(client_cmd, 0, sizeof(client_cmd));
     memset(user_cmd, 0, sizeof(user_cmd));
 
@@ -135,9 +138,11 @@ static void handle_client(int client_fd) {
     assemble_cmd(user_cmd, client_cmd, &cmd_len);
     // issue the command
     write(client_fd, client_cmd, cmd_len);
-    if (!strncmp(user_cmd, EXIT_CMD, strlen(EXIT_CMD))) {
+    if (!strncmp(user_cmd, EXIT_CMD, exit_cmd_len)) {
       break;
     }
+
+    read_cli_buffer(client_fd, CLIENT_REPLY_TIMEOUT);
   }
 }
 
