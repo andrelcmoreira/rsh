@@ -69,7 +69,7 @@ static void read_cli_buffer(int client_fd, int timeout) {
 
   tout.tv_sec = timeout;
 
-  while (1) {
+  while (!user_abort) {
     FD_ZERO(&set);
     FD_SET(client_fd, &set);
 
@@ -182,7 +182,7 @@ static int run(const rsh_cfg_t *restrict cfg) {
 
   RSH_LOG("Starting server...\n");
 
-  while (1) {
+  while (!user_abort) {
     FD_ZERO(&set);
     FD_SET(s_fd, &set);
 
@@ -198,6 +198,7 @@ static int run(const rsh_cfg_t *restrict cfg) {
       if (c_fd > 0) {
         RSH_SUCCESS("Client %s connected\n", inet_ntoa(c_addr.sin_addr));
         handle_client(c_fd);
+        close(c_fd);
         RSH_SUCCESS("Client %s disconnected\n", inet_ntoa(c_addr.sin_addr));
       }
     }
