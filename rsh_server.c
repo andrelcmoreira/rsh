@@ -133,6 +133,9 @@ static void handle_client(int client_fd) {
     memset(user_cmd, 0, sizeof(user_cmd));
 
     (void)!fgets(user_cmd, sizeof(user_cmd), stdin);
+    if (user_abort) {
+      break;
+    }
 
     cmd_len = strlen(user_cmd);
     assemble_cmd(user_cmd, client_cmd, &cmd_len);
