@@ -75,6 +75,7 @@ static void read_cli_buffer(int client_fd, int timeout) {
 
     ret = select(client_fd + 1, &set, NULL, NULL, &tout);
     if (!ret) {
+      // timeout reached.
       break;
     } else if (ret == -1) {
       RSH_LOG("%s\n", strerror(errno));
@@ -105,7 +106,7 @@ static void read_cli_buffer(int client_fd, int timeout) {
   }
 }
 
-inline static void assemble_cmd(char *kb_cmd, char *user_cmd,
+inline static void assemble_cmd(const char *kb_cmd, char *user_cmd,
                                 size_t *cmd_len) {
   if (kb_cmd[0] != '\n') {
     memcpy(user_cmd, kb_cmd, *cmd_len);
@@ -133,6 +134,9 @@ static void handle_client(int client_fd) {
     memset(user_cmd, 0, sizeof(user_cmd));
 
     (void)!fgets(user_cmd, sizeof(user_cmd), stdin);
+    if (user_abort) {
+      break;
+    }
 
     cmd_len = strlen(user_cmd);
     assemble_cmd(user_cmd, client_cmd, &cmd_len);
