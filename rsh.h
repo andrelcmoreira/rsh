@@ -15,9 +15,15 @@
 
 // logging
 #define RSH_RAW_LOG(...) fprintf(stdout, __VA_ARGS__)
+#ifdef LOGGING
 #define RSH_LOG(...)     fprintf(stdout, "[*] "__VA_ARGS__)
 #define RSH_FATAL(...)   fprintf(stderr, "[\033[0;31m-\033[0m] "__VA_ARGS__)
 #define RSH_SUCCESS(...) fprintf(stdout, "[\033[0;32m+\033[0m] "__VA_ARGS__)
+#else
+#define RSH_LOG(...)
+#define RSH_FATAL(...)
+#define RSH_SUCCESS(...)
+#endif  // LOGGING
 
 typedef struct {
   char ip[16];

@@ -29,6 +29,10 @@ static void sig_handler(int signum) {
 }
 
 static void usage(const char *progname) {
+#ifndef LOGGING
+  (void)progname;
+#endif  // !LOGGING
+
   RSH_RAW_LOG(
     "%sv%s\n%s\nUsage: %s [OPTIONS]\n\n"
     "OPTIONS\n"
