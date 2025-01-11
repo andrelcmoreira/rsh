@@ -28,11 +28,7 @@ static void sig_handler(int signum) {
   user_abort = true;
 }
 
-static void usage(const char *progname) {
-#ifndef LOGGING
-  (void)progname;
-#endif  // !LOGGING
-
+static void usage(MAYBE_UNUSED const char *progname) {
   RSH_RAW_LOG(
     "%sv%s\n%s\nUsage: %s [OPTIONS]\n\n"
     "OPTIONS\n"
@@ -110,7 +106,7 @@ static void read_cli_buffer(int client_fd, int timeout) {
   }
 }
 
-inline static void assemble_cmd(const char *kb_cmd, char *user_cmd,
+static inline void assemble_cmd(const char *kb_cmd, char *user_cmd,
                                 size_t *cmd_len) {
   if (kb_cmd[0] != '\n') {
     memcpy(user_cmd, kb_cmd, *cmd_len);

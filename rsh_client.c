@@ -1,6 +1,7 @@
 #include <arpa/inet.h>
 #include <getopt.h>
 #include <netinet/in.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,11 +13,7 @@
 #define DEFAULT_RETRY_INTERVAL  10
 #define DEFAULT_RETRY_COUNT     100
 
-static void usage(const char *progname) {
-#ifndef LOGGING
-  (void)progname;
-#endif  // !LOGGING
-
+static void usage(MAYBE_UNUSED const char *progname) {
   RSH_RAW_LOG(
     "%sv%s\n%s\nUsage: %s [OPTIONS]\n\n"
     "OPTIONS\n"
@@ -25,6 +22,40 @@ static void usage(const char *progname) {
     " -c <count>    Specify the retry count for server connection\n"
     " -s <addr>     Specify the server address\n"
     " -h            Show this message\n", BANNER, VERSION, FOOTER, progname);
+}
+
+static void parse_build_args(MAYBE_UNUSED rsh_cfg_t *restrict cfg) {
+#ifdef RETRY_COUNT
+  cfg->retry_count = RETRY_COUNT;
+#endif  // RETRY_COUNT
+
+#ifdef RETRY_INTERVAL
+  cfg->retry_interval = RETRY_INTERVAL;
+#endif  // RETRY_INTERVAL
+
+#ifdef SERVER_PORT
+  cfg->port = htons(SERVER_PORT);
+#endif  // SERVER_PORT
+
+#ifdef SERVER_ADDRESS
+  const char *addr = XSTR(SERVER_ADDRESS);
+
+  memcpy(cfg->ip, addr, MIN(sizeof(cfg->ip) - 1, strlen(addr)));
+#endif  // SERVER_ADDRESS
+}
+
+static bool has_build_args(void) {
+#if defined(RETRY_COUNT) && \
+  defined(RETRY_INTERVAL) && \
+  defined(SERVER_PORT) && \
+  defined(SERVER_ADDRESS)
+  return true;
+#else
+  return false;
+#endif  // defined(RETRY_COUNT) &&
+        // defined(RETRY_INTERVAL) &&
+        // defined(SERVER_PORT) &&
+        // defined(SERVER_ADDRESS)
 }
 
 static int parse_args(int argc, char *argv[], rsh_cfg_t *restrict cfg) {
@@ -114,8 +145,9 @@ int main(int argc, char *argv[]) {
 
   memset(&cfg, 0, sizeof(rsh_cfg_t));
 
-  // parse the server ip and port
-  if (parse_args(argc, argv, &cfg)) {
+  if (has_build_args()) {
+    parse_build_args(&cfg);
+  } else if (parse_args(argc, argv, &cfg)) {
     usage(argv[0]);
     exit(EXIT_FAILURE);
   }

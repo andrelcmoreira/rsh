@@ -25,6 +25,12 @@
 #define RSH_SUCCESS(...)
 #endif  // LOGGING
 
+// util macros
+#define MIN(x,y)        x < y ? x : y
+#define XSTR(s)         STR(s)
+#define STR(s)          #s
+#define MAYBE_UNUSED    __attribute__((unused))
+
 typedef struct {
   char ip[16];
   uint16_t port;
