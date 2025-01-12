@@ -13,7 +13,22 @@
 #define DEFAULT_RETRY_INTERVAL  10
 #define DEFAULT_RETRY_COUNT     100
 
-static void usage(MAYBE_UNUSED const char *progname) {
+#if defined(RETRY_COUNT) && \
+  defined(RETRY_INTERVAL) && \
+  defined(SERVER_PORT) && \
+  defined(SERVER_ADDRESS)
+#define BUILD_ARGS
+#endif  // defined(RETRY_COUNT) &&
+        // defined(RETRY_INTERVAL) &&
+        // defined(SERVER_PORT) &&
+        // defined(SERVER_ADDRESS)
+
+static bool has_valid_config(const rsh_cfg_t *cfg) {
+  return cfg->port && cfg->ip[0] != '\0';
+}
+
+#ifndef BUILD_ARGS
+static void usage(const char *progname) {
   RSH_RAW_LOG(
     "%sv%s\n%s\nUsage: %s [OPTIONS]\n\n"
     "OPTIONS\n"
@@ -22,40 +37,6 @@ static void usage(MAYBE_UNUSED const char *progname) {
     " -c <count>    Specify the retry count for server connection\n"
     " -s <addr>     Specify the server address\n"
     " -h            Show this message\n", BANNER, VERSION, FOOTER, progname);
-}
-
-static void parse_build_args(MAYBE_UNUSED rsh_cfg_t *restrict cfg) {
-#ifdef RETRY_COUNT
-  cfg->retry_count = RETRY_COUNT;
-#endif  // RETRY_COUNT
-
-#ifdef RETRY_INTERVAL
-  cfg->retry_interval = RETRY_INTERVAL;
-#endif  // RETRY_INTERVAL
-
-#ifdef SERVER_PORT
-  cfg->port = htons(SERVER_PORT);
-#endif  // SERVER_PORT
-
-#ifdef SERVER_ADDRESS
-  const char *addr = XSTR(SERVER_ADDRESS);
-
-  memcpy(cfg->ip, addr, MIN(sizeof(cfg->ip) - 1, strlen(addr)));
-#endif  // SERVER_ADDRESS
-}
-
-static bool has_build_args(void) {
-#if defined(RETRY_COUNT) && \
-  defined(RETRY_INTERVAL) && \
-  defined(SERVER_PORT) && \
-  defined(SERVER_ADDRESS)
-  return true;
-#else
-  return false;
-#endif  // defined(RETRY_COUNT) &&
-        // defined(RETRY_INTERVAL) &&
-        // defined(SERVER_PORT) &&
-        // defined(SERVER_ADDRESS)
 }
 
 static int parse_args(int argc, char *argv[], rsh_cfg_t *restrict cfg) {
@@ -89,12 +70,32 @@ static int parse_args(int argc, char *argv[], rsh_cfg_t *restrict cfg) {
     cfg->retry_count = DEFAULT_RETRY_COUNT;
   }
 
-  if (!cfg->port || (cfg->ip[0] == '\0')) {
+  if (!has_valid_config(cfg)) {
+    RSH_FATAL("Invalid rsh config!\n");
     return 1;
   }
 
   return 0;
 }
+#endif  // !BUILD_ARGS
+
+#ifdef BUILD_ARGS
+static int parse_build_args(rsh_cfg_t *cfg) {
+  const char *addr = XSTR(SERVER_ADDRESS);
+
+  memcpy(cfg->ip, addr, MIN(sizeof(cfg->ip) - 1, strlen(addr)));
+  cfg->retry_count = RETRY_COUNT;
+  cfg->retry_interval = RETRY_INTERVAL;
+  cfg->port = htons(SERVER_PORT);
+
+  if (!has_valid_config(cfg)) {
+    RSH_FATAL("Invalid rsh config!\n");
+    return 1;
+  }
+
+  return 0;
+}
+#endif  // BUILD_ARGS
 
 static void exec_shell(int fd) {
   char *const cmd[] = { "/bin/sh", "-i", NULL };
@@ -145,12 +146,20 @@ int main(int argc, char *argv[]) {
 
   memset(&cfg, 0, sizeof(rsh_cfg_t));
 
-  if (has_build_args()) {
-    parse_build_args(&cfg);
-  } else if (parse_args(argc, argv, &cfg)) {
+#ifdef BUILD_ARGS
+  (void)argc;
+  (void)argv;
+
+  if (parse_build_args(&cfg)) {
+    RSH_FATAL("Missing mandatory build args\n");
+    exit(EXIT_FAILURE);
+  }
+#else
+  if (parse_args(argc, argv, &cfg)) {
     usage(argv[0]);
     exit(EXIT_FAILURE);
   }
+#endif  // BUILD_ARGS
 
   // run the client
   int ret = run(&cfg);
