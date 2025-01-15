@@ -1,6 +1,6 @@
 include main.mk
 
-.if $(LOGGING)==ON
+.if "${LOGGING}" == "ON"
 PARAMS += -DLOGGING=ON
 .endif
 
